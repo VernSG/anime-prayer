@@ -1,0 +1,68 @@
+{
+  "name": "animeprayer-notifier",
+  "displayName": "AnimePrayer Notifier",
+  "description": "Animeprayer Notifier adalah ekstensi Visual Studio Code yang bakal nge-remind kamu waktu salat dengan cara yang super kawaii! Pas waktu salat tiba, bakal muncul notifikasi lucu di pojokan editor kamu, lengkap sama visual karakter anime yang bikin semangat buat salat. Cocok banget buat para coder wibu biar nggak lupa ibadah meski lagi asik ngoding!",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "icon": "assets/ryotemplate-Photoroom.png",
+  "publisher": "MuhammadYusuf",
+  "keywords": [
+    "anime",
+    "ibadah",
+    "sholat",
+    "notifikasi sholat",
+    "anime ibadah",
+    "salat",
+    "waktu salat",
+    "anime prayer",
+    "pengingat"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VernSG/anime-prayer"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "animeprayer-notifier.showWebview",
+        "title": "Tampilkan Webview Salat (Test)"
+      },
+      {
+        "command": "animeprayer-notifier.chooseImage",
+        "title": "Pilih Gambar Anime"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/node-fetch": "^2.6.12",
+    "@types/vscode": "^1.96.0",
+    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/parser": "^8.17.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.16.0",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
