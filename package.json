@@ -2,7 +2,7 @@
   "name": "animeprayer-notifier",
   "displayName": "AnimePrayer Notifier",
   "description": "Animeprayer Notifier adalah ekstensi Visual Studio Code yang bakal nge-remind kamu waktu salat dengan cara yang super kawaii! Pas waktu salat tiba, bakal muncul notifikasi lucu di pojokan editor kamu, lengkap sama visual karakter anime yang bikin semangat buat salat. Cocok banget buat para coder wibu biar nggak lupa ibadah meski lagi asik ngoding!",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.96.0"
   },
