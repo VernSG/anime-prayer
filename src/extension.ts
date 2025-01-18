@@ -390,21 +390,21 @@ function getWebviewContent(
     <script>
         const vscode = acquireVsCodeApi();
         // Mendapatkan gambar yang tersimpan dari local storage
-        const storedImage = localStorage.getItem('prayerImage');
-        if (storedImage) {
-            document.getElementById('prayerImage').src = storedImage;
-        }
+        const storedImage = vscode.getState<string>('customPrayerImage');
+if (storedImage) {
+    document.getElementById('prayerImage').src = storedImage;
+}
 
         window.addEventListener('message', event => {
-            const message = event.data; // The JSON data our extension sent
+    const message = event.data; // The JSON data our extension sent
 
-            switch (message.command) {
-                case 'setImage':
-                    localStorage.setItem('prayerImage', message.value);
-                    document.getElementById('prayerImage').src = message.value;
-                    break;
-            }
-        });
+    switch (message.command) {
+        case 'setImage':
+            vscode.getState().update('customPrayerImage', message.value);
+            document.getElementById('prayerImage').src = message.value;
+            break;
+    }
+});
     </script>
     </body>
     </html>`;
