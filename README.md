@@ -10,7 +10,7 @@ AnimePrayer Notifier adalah ekstensi Visual Studio Code yang akan mengingatkan A
 
 - Notifikasi waktu salat dengan visual anime yang menarik.
 - Pilihan zona waktu (WIB, WITA, WIT).
-- Kustomisasi gambar anime (Anda bisa memilih gambar dari komputer Anda).
+- (bug) Kustomisasi gambar anime
 
 ## Cara Penggunaan
 
@@ -24,7 +24,7 @@ AnimePrayer Notifier adalah ekstensi Visual Studio Code yang akan mengingatkan A
 
 _Contoh notifikasi yang muncul:_
 
-![Contoh Notifikasi](/assets/Screenshot%20From%202025-01-18%2018-08-09.png)
+![Contoh Notifikasi](/assets/Screenshot%20From%202025-01-28%2002-31-45.png)
 
 ## Konfigurasi
 
