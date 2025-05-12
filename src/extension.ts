@@ -1,5 +1,7 @@
 import * as vscode from "vscode";
 import fetch from "node-fetch";
+import * as path from "path";
+import * as fs from "fs";
 
 // Tipe data untuk respons API
 interface PrayerApiResponse {
@@ -9,6 +11,12 @@ interface PrayerApiResponse {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+  // Pastikan folder media ada
+  const mediaFolderPath = path.join(context.extensionUri.fsPath, "media");
+  if (!fs.existsSync(mediaFolderPath)) {
+    fs.mkdirSync(mediaFolderPath, { recursive: true });
+  }
+
   // show webview command
   let showWebviewCommand = vscode.commands.registerCommand(
     "animeprayer-notifier.showWebview",
@@ -19,25 +27,30 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(showWebviewCommand);
 
-  // let chooseImageCommand = vscode.commands.registerCommand(
-  //   "animeprayer-notifier.chooseImage",
-  //   () => {
-  //     chooseImage(context);
-  //   }
-  // );
-  // context.subscriptions.push(chooseImageCommand);
+  let chooseImageCommand = vscode.commands.registerCommand(
+    "animeprayer-notifier.chooseImage",
+    () => {
+      chooseImage(context);
+    }
+  );
+  context.subscriptions.push(chooseImageCommand);
 
   // Periksa apakah zona waktu dan gambar sudah disimpan
   const savedTimezone = context.globalState.get<string>("selectedTimezone");
   const savedImage = context.globalState.get<string>("customPrayerImage");
 
-  // if (!savedImage) {
-  //   vscode.window.showErrorMessage(
-  //     "Anda harus memilih gambar terlebih dahulu untuk menggunakan extension ini."
-  //   );
-  //   chooseImage(context);
-  //   return;
-  // }
+  if (!savedImage) {
+    vscode.window
+      .showInformationMessage(
+        "Anda harus memilih gambar terlebih dahulu untuk menampilkan notifikasi dengan gambar.",
+        "Pilih Gambar"
+      )
+      .then((selection) => {
+        if (selection === "Pilih Gambar") {
+          chooseImage(context);
+        }
+      });
+  }
 
   if (savedTimezone) {
     vscode.window.showInformationMessage(
@@ -111,10 +124,9 @@ async function checkPrayerTimes(
         if (prayerTime > now) {
           const diff = prayerTime.getTime() - now.getTime();
           setTimeout(() => {
-            vscode.window.showInformationMessage(
-              `Waktunya salat ${prayer}! woiii!!!`,
-              { modal: true }
-            );
+            vscode.window.showInformationMessage(`Waktunya salat ${prayer}!`, {
+              modal: true,
+            });
             showAnimeImage(context, prayer);
           }, diff);
           break;
@@ -160,102 +172,163 @@ async function showAnimeImage(
   context: vscode.ExtensionContext,
   prayer: string
 ) {
-  const savedImage = context.globalState.get<string>("customPrayerImage");
-  if (!savedImage) {
-    vscode.window.showErrorMessage(
-      "Gambar belum disimpan. Silakan pilih gambar terlebih dahulu."
-    );
-    return;
-  }
+  try {
+    // Coba gunakan gambar kustom yang dipilih pengguna
+    const savedImage = context.globalState.get<string>("customPrayerImage");
 
-  const imageUri = vscode.Uri.file(savedImage);
+    // Gunakan gambar default jika gambar kustom tidak tersedia
+    let imageUri;
+    let defaultImageUsed = false;
+    let imagePath = "";
 
-  const panel = vscode.window.createWebviewPanel(
-    "prayerTime",
-    `Waktunya Salat ${prayer}!`,
-    vscode.ViewColumn.Two, // Gunakan langsung ViewColumn
-    {
-      enableScripts: true,
-      localResourceRoots: [
-        vscode.Uri.file(savedImage)
-          .with({ scheme: "vscode-resource" })
-          .with({
-            path: vscode.Uri.file(savedImage)
-              .path.split("/")
-              .slice(0, -1)
-              .join("/"),
-          }),
-      ],
+    if (savedImage && fs.existsSync(savedImage)) {
+      imageUri = vscode.Uri.file(savedImage);
+      imagePath = savedImage;
+      console.log(`Menggunakan gambar kustom: ${savedImage}`);
+    } else {
+      // Gunakan gambar default dari folder assets
+      const defaultImagePath = path.join(
+        context.extensionUri.fsPath,
+        "assets",
+        "ryotemplate-Photoroom.png"
+      );
+
+      console.log(`Mencoba menggunakan gambar default: ${defaultImagePath}`);
+
+      if (fs.existsSync(defaultImagePath)) {
+        imageUri = vscode.Uri.file(defaultImagePath);
+        imagePath = defaultImagePath;
+        defaultImageUsed = true;
+        console.log(`Gambar default ditemukan: ${defaultImagePath}`);
+      } else {
+        console.error(
+          `Gambar default tidak ditemukan di path: ${defaultImagePath}`
+        );
+        vscode.window.showErrorMessage(
+          `Gambar default tidak ditemukan di: ${defaultImagePath}. Silakan pilih gambar terlebih dahulu.`
+        );
+        chooseImage(context);
+        return;
+      }
     }
-  );
 
-  const webview = panel.webview;
-  const imageUrl = webview.asWebviewUri(imageUri);
+    // Buat panel webview
+    const panel = vscode.window.createWebviewPanel(
+      "prayerTime",
+      `Waktunya Salat ${prayer}!`,
+      vscode.ViewColumn.Two,
+      {
+        enableScripts: true,
+        localResourceRoots: [
+          vscode.Uri.file(path.dirname(imagePath)),
+          context.extensionUri,
+        ],
+      }
+    );
 
-  panel.webview.html = getWebviewContent(
-    webview,
-    context.extensionUri,
-    prayer,
-    imageUrl.toString()
-  );
+    const webview = panel.webview;
+    const imageUrl = webview.asWebviewUri(imageUri);
 
-  setTimeout(() => {
-    panel.dispose();
-  }, 5000);
+    console.log(`URL gambar untuk webview: ${imageUrl.toString()}`);
+
+    // Tampilkan HTML dengan gambar
+    panel.webview.html = getWebviewContent(prayer, imageUrl.toString());
+
+    // Tampilkan pesan jika menggunakan gambar default
+    if (defaultImageUsed) {
+      vscode.window.showInformationMessage(
+        "Menggunakan gambar default. Anda dapat memilih gambar kustom dengan menjalankan perintah 'Pilih Gambar'."
+      );
+    }
+
+    setTimeout(() => {
+      panel.dispose();
+    }, 5000);
+  } catch (error: any) {
+    console.error(`Error saat menampilkan gambar: ${error.message || error}`);
+    vscode.window.showErrorMessage(
+      `Error saat menampilkan gambar: ${error.message || error}`
+    );
+  }
 }
 
-function getWebviewContent(
-  webview: vscode.Webview,
-  extensionUri: vscode.Uri,
-  prayer: string,
-  imageUrl: string
-) {
-  const toolkitUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "media", "toolkit.min.js")
-  );
-  const styleUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "media", "style.css")
-  );
-  const codiconsUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "media", "codicons.css")
-  );
-
+function getWebviewContent(prayer: string, imageUrl: string) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${imageUrl.substring(
+      0,
+      imageUrl.indexOf("/", 8)
+    )} https:; style-src 'unsafe-inline';">
     <title>Waktu Salat</title>
-    <script type="module" src="${toolkitUri}"></script>
-    <link href="${styleUri}" rel="stylesheet" />
-    <link href="${codiconsUri}" rel="stylesheet" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+        color: #333;
+        background-color: #f5f5f5;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      }
+      img {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 8px;
+        margin: 20px 0;
+        border: 1px solid #ddd;
+      }
+      h1 {
+        color: #2c3e50;
+      }
+      p {
+        margin-top: 20px;
+        font-size: 16px;
+      }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Waktunya Salat ${prayer} Sayanggg..</h1>
-        <img id="prayerImage" src="https://res.cloudinary.com/djsdnb4td/image/upload/v1738001789/ikuyoo-Photoroom_inenpd.png" alt="Ilustrasi Salat" />
+        <h1>Waktunya Salat ${prayer} ..</h1>
+        <img id="prayerImage" src="${imageUrl}" alt="Ilustrasi Salat" onerror="this.onerror=null; this.src='https://res.cloudinary.com/djsdnb4td/image/upload/v1738001789/ikuyoo-Photoroom_inenpd.png'; document.getElementById('error-message').style.display='block';" />
         <p>Ayo cepetan salat! Jangan lupa niat yang baik yaaa</p>
+        <div id="error-message" style="display: none; color: red;">
+          Gambar lokal tidak dapat dimuat, menggunakan gambar cadangan.
+        </div>
     </div>
 </body>
 </html>`;
 }
 
 // Fungsi untuk memilih gambar dari file lokal
-// async function chooseImage(context: vscode.ExtensionContext) {
-//   const options: vscode.OpenDialogOptions = {
-//     canSelectMany: false,
-//     openLabel: "Pilih Gambar",
-//     filters: {
-//       Images: ["png", "jpg", "jpeg", "gif"],
-//     },
-//   };
+async function chooseImage(context: vscode.ExtensionContext) {
+  const options: vscode.OpenDialogOptions = {
+    canSelectMany: false,
+    openLabel: "Pilih Gambar",
+    filters: {
+      Images: ["png", "jpg", "jpeg", "gif"],
+    },
+  };
 
-//   const fileUri = await vscode.window.showOpenDialog(options);
-//   if (fileUri && fileUri[0]) {
-//     const imagePath = fileUri[0].fsPath;
-//     context.globalState.update("customPrayerImage", imagePath);
-//     vscode.window.showInformationMessage("Gambar berhasil disimpan.");
-//   }
-// }
+  const fileUri = await vscode.window.showOpenDialog(options);
+  if (fileUri && fileUri[0]) {
+    const imagePath = fileUri[0].fsPath;
+    context.globalState.update("customPrayerImage", imagePath);
+    vscode.window.showInformationMessage(
+      `Gambar berhasil disimpan: ${imagePath}`
+    );
+
+    // Tampilkan preview gambar yang baru dipilih
+    showAnimeImage(context, "Test");
+  }
+}
 
 export function deactivate() {}

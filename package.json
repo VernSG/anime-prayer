@@ -2,7 +2,7 @@
   "name": "animeprayer-notifier",
   "displayName": "AnimePrayer Notifier",
   "description": "Animeprayer Notifier adalah ekstensi Visual Studio Code yang bakal nge-remind kamu waktu salat dengan cara yang super kawaii!",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "engines": {
     "vscode": "^1.96.0"
   },
@@ -23,6 +23,7 @@
     "type": "git",
     "url": "https://github.com/VernSG/anime-prayer"
   },
+  "license": "MIT",
   "categories": [
     "Other"
   ],
@@ -35,6 +36,10 @@
       {
         "command": "animeprayer-notifier.showWebview",
         "title": "Tampilkan Webview Salat (Test)"
+      },
+      {
+        "command": "animeprayer-notifier.chooseImage",
+        "title": "Pilih Gambar untuk Notifikasi Salat"
       }
     ]
   },
