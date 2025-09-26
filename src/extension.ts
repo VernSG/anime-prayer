@@ -35,6 +35,18 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(chooseImageCommand);
 
+  let chooseTimezoneCommand = vscode.commands.registerCommand(
+    "animeprayer-notifier.chooseTimezone",
+    () => {
+      context.globalState.update("selectedTimezone", undefined);
+      vscode.window.showInformationMessage(
+        "Zona waktu telah direset. Silakan pilih zona waktu lagi."
+      );
+      chooseAndSaveTimezone(context);
+    }
+  );
+  context.subscriptions.push(chooseTimezoneCommand);
+
   // Periksa apakah zona waktu dan gambar sudah disimpan
   const savedTimezone = context.globalState.get<string>("selectedTimezone");
   const savedImage = context.globalState.get<string>("customPrayerImage");
@@ -60,28 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
     checkPrayerTimes(context, timezoneOffset);
   } else {
     // Jika belum, minta pengguna memilih zona waktu
-    vscode.window
-      .showQuickPick(["WIB", "WITA", "WIT"], {
-        placeHolder: "Pilih Zona Waktu Anda (WIB, WITA, WIT)",
-      })
-      .then((selectedZone) => {
-        if (!selectedZone) {
-          vscode.window.showErrorMessage(
-            "Anda harus memilih zona waktu terlebih dahulu."
-          );
-          return;
-        }
-
-        // Simpan pilihan pengguna
-        context.globalState.update("selectedTimezone", selectedZone);
-        vscode.window.showInformationMessage(
-          `Zona waktu ${selectedZone} telah disimpan.`
-        );
-
-        // Mulai proses cek waktu salat
-        const timezoneOffset = getTimezoneOffset(selectedZone);
-        checkPrayerTimes(context, timezoneOffset);
-      });
+    chooseAndSaveTimezone(context);
   }
 }
 
@@ -329,6 +320,25 @@ async function chooseImage(context: vscode.ExtensionContext) {
     // Tampilkan preview gambar yang baru dipilih
     showAnimeImage(context, "Test");
   }
+}
+
+async function chooseAndSaveTimezone(context: vscode.ExtensionContext) {
+  const selectedZone = await vscode.window.showQuickPick(
+    ["WIB", "WITA", "WIT"],
+    { placeHolder: "Pilih Zona Waktu Anda (WIB, WITA, WIT)" }
+  );
+  if (!selectedZone) {
+    vscode.window.showErrorMessage(
+      "Anda harus memilih zona waktu terlebih dahulu."
+    );
+    return;
+  }
+  await context.globalState.update("selectedTimezone", selectedZone);
+  vscode.window.showInformationMessage(
+    `Zona waktu ${selectedZone} telah disimpan.`
+  );
+  const timezoneOffset = getTimezoneOffset(selectedZone);
+  checkPrayerTimes(context, timezoneOffset);
 }
 
 export function deactivate() {}
