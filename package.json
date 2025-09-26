@@ -40,6 +40,10 @@
       {
         "command": "animeprayer-notifier.chooseImage",
         "title": "Pilih Gambar untuk Notifikasi Salat"
+      },
+      {
+        "command": "animeprayer-notifier.chooseTimezone",
+        "title": "Pilih Zona Waktu"
       }
     ]
   },
